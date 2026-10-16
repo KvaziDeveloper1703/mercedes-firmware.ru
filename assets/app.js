@@ -31,3 +31,38 @@ if(form){
   const link=document.createElement('a');link.href='https://t.me/Foreverinever';link.target='_blank';link.rel='noopener noreferrer';link.textContent='Открыть Telegram';status.appendChild(link);
  });
 }
+
+
+// Cinematic, unobtrusive page transitions. Hash links, external sites,
+// modified clicks and new-tab links use the browser's default behavior.
+const chromeMotionReduced=window.matchMedia('(prefers-reduced-motion: reduce)');
+let pageNavigationInProgress=false;
+const pageRoot=document.documentElement;
+if(pageRoot.classList.contains('page-arriving')){
+  window.setTimeout(()=>pageRoot.classList.remove('page-arriving'),760);
+}
+document.addEventListener('click',event=>{
+  if(event.defaultPrevented||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey||chromeMotionReduced.matches)return;
+  const anchor=event.target.closest('a[href]');
+  if(!anchor||anchor.hasAttribute('download')||(anchor.target&&anchor.target!=='_self'))return;
+  let destination;
+  try{destination=new URL(anchor.href,location.href)}catch(_){return}
+  if(destination.origin!==location.origin||!['http:','https:','file:'].includes(destination.protocol))return;
+  // Preserve immediate, native scrolling to anchors on the current page.
+  if(destination.pathname===location.pathname&&destination.search===location.search)return;
+  event.preventDefault();
+  if(pageNavigationInProgress)return;
+  pageNavigationInProgress=true;
+  try{sessionStorage.setItem('mf-page-transition',JSON.stringify({to:destination.pathname+destination.search,at:Date.now()}))}catch(_){}
+  pageRoot.classList.add('page-leaving');
+  window.setTimeout(()=>location.assign(destination.href),380);
+});
+// A back/forward-cache restoration must never keep the outgoing overlay.
+window.addEventListener('pageshow',event=>{
+  pageRoot.classList.remove('page-leaving');
+  pageNavigationInProgress=false;
+  if(event.persisted&& !chromeMotionReduced.matches){
+    pageRoot.classList.add('page-arriving');
+    window.setTimeout(()=>pageRoot.classList.remove('page-arriving'),760);
+  }
+});

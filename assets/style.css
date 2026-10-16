@@ -273,8 +273,74 @@ footer a:hover { color: #fff; }
   .footer-grid { gap: 29px; }
   .hero-product { min-height: unset; }
 }
+
+/* -----------------------------------------------------------------------
+   Silver page transitions — used on same-site navigation only.
+   A fast chrome reflection crosses the viewport while content fades out.
+   On the destination the page rises softly into place. Everything remains
+   readable and clickable without JavaScript or sessionStorage support.
+------------------------------------------------------------------------ */
+html { background: #050505; }
+html::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(-115%,0,0);
+  background: linear-gradient(104deg,
+    transparent 0%,
+    transparent 36%,
+    rgba(235,235,235,.025) 42%,
+    rgba(255,255,255,.09) 46%,
+    rgba(255,255,255,.46) 49.8%,
+    rgba(255,255,255,.85) 50%,
+    rgba(240,240,240,.15) 50.2%,
+    rgba(255,255,255,.035) 56%,
+    transparent 62%,
+    transparent 100%);
+  will-change: transform,opacity;
+}
+html.page-leaving body {
+  animation: mf-page-exit .38s cubic-bezier(.42,0,.7,1) both;
+  pointer-events: none;
+}
+html.page-leaving::before {
+  animation: mf-silver-exit .42s cubic-bezier(.32,.2,.55,1) both;
+}
+html.page-arriving body {
+  animation: mf-page-enter .62s cubic-bezier(.2,.8,.2,1) both;
+}
+html.page-arriving::before {
+  animation: mf-silver-enter .59s cubic-bezier(.2,.75,.25,1) both;
+}
+@keyframes mf-page-exit {
+  0% { opacity: 1; filter: brightness(1); }
+  100% { opacity: 0; filter: brightness(.72); }
+}
+@keyframes mf-page-enter {
+  0% { opacity: 0; filter: brightness(.75); }
+  45% { opacity: .74; }
+  100% { opacity: 1; filter: brightness(1); }
+}
+@keyframes mf-silver-exit {
+  0% { opacity: 0; transform: translate3d(-115%,0,0); }
+  16% { opacity: 1; }
+  90% { opacity: .7; }
+  100% { opacity: 0; transform: translate3d(115%,0,0); }
+}
+@keyframes mf-silver-enter {
+  0% { opacity: .52; transform: translate3d(-115%,0,0); }
+  70% { opacity: .24; }
+  100% { opacity: 0; transform: translate3d(115%,0,0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  html::before { display: none; }
+  html.page-leaving body { pointer-events: auto; opacity: 1; }
+  html.page-arriving body { opacity: 1; }
   *,*::before,*::after { transition: none!important; animation: none!important; }
   .js .reveal { opacity: 1; transform: none; }
 }
