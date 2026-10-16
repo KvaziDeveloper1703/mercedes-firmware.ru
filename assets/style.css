@@ -351,3 +351,9 @@ html.page-arriving::before {
   .brand { font-size: 9px; letter-spacing: .045em; }
   .hero-home h1 { font-size: 6.4vw; }
 }
+
+/* FormSubmit fallback, shown only if async delivery could not be confirmed. */
+.form-fallback { display:inline-flex; margin-top:12px; padding:10px 0; background:none; border:0; color:#e6e6e6; font:inherit; font-size:13px; cursor:pointer; text-align:left; text-decoration:underline; text-underline-offset:4px; }
+.form-fallback:hover { color:#fff; }
+.form-fallback[hidden] { display:none !important; }
+.form-fallback:focus-visible { outline:2px solid #ddd; outline-offset:3px; }
