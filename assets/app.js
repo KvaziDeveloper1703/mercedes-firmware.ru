@@ -12,23 +12,44 @@ if(form){
  const requested=(params.get('request')||'').trim().slice(0,140);
  if(requested){document.getElementById('topic').value='Покупка MB Suite';document.getElementById('message').value='Интересует модуль MB Suite: '+requested+'. Прошу уточнить условия приобретения.'}
  const status=document.getElementById('formStatus');
- form.addEventListener('submit',async e=>{
-  e.preventDefault();
-  const name=document.getElementById('name').value.trim();
-  const contact=document.getElementById('contactValue').value.trim();
-  const topic=document.getElementById('topic').value;
-  const message=document.getElementById('message').value.trim();
-  if(!name||!contact||!message){form.reportValidity();return}
-  const msg=`Заявка с сайта Mercedes Firmware\n\nИмя: ${name}\nКонтакт: ${contact}\nТема: ${topic}\n\nСообщение:\n${message}`;
-  // Open Telegram directly on user gesture, preventing delayed-popup blocking.
-  const windowRef=window.open('https://t.me/Foreverinever','_blank');
-  if(windowRef)windowRef.opener=null;
-  let copied=false;
-  try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(msg);copied=true}else{const el=document.createElement('textarea');el.value=msg;el.style.position='fixed';el.style.opacity='0';document.body.appendChild(el);el.select();copied=document.execCommand('copy');el.remove()}}catch(_){copied=false}
-  status.replaceChildren();status.classList.add('show');
-  const info=document.createElement('div');info.textContent=copied?'Заявка скопирована. Вставьте текст в Telegram и отправьте его @Foreverinever.':'Если заявка не скопировалась, выделите и скопируйте текст ниже вручную.';status.appendChild(info);
-  if(!copied){const textarea=document.createElement('textarea');textarea.readOnly=true;textarea.value=msg;textarea.setAttribute('aria-label','Подготовленная заявка');status.appendChild(textarea)}
-  const link=document.createElement('a');link.href='https://t.me/Foreverinever';link.target='_blank';link.rel='noopener noreferrer';link.textContent='Открыть Telegram';status.appendChild(link);
+ const submitButton=document.getElementById('submitContact');
+ const originalButtonContent=submitButton.innerHTML;
+ form.addEventListener('submit',async event=>{
+  event.preventDefault();
+  if(!form.reportValidity())return;
+  if(submitButton.disabled)return;
+  submitButton.disabled=true;
+  submitButton.textContent='Отправляем…';
+  form.setAttribute('aria-busy','true');
+  status.className='status show pending';
+  status.textContent='Отправляем заявку. Пожалуйста, не закрывайте страницу.';
+  const controller=new AbortController();
+  const deadline=setTimeout(()=>controller.abort(),20000);
+  try{
+   const payload=Object.fromEntries(new FormData(form).entries());
+   const response=await fetch(form.action,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Accept':'application/json'},
+    body:JSON.stringify(payload),
+    signal:controller.signal
+   });
+   let result;
+   try{result=await response.json()}catch(_){throw new Error('invalid-response')}
+   if(!response.ok||!(result&& (result.success===true||result.success==='true'))){throw new Error('submit-failed')}
+   status.className='status show success';
+   status.textContent='Спасибо! Заявка отправлена. Мы свяжемся с вами по указанным контактным данным.';
+   form.reset();
+  }catch(error){
+   status.className='status show error';
+   status.textContent=error.name==='AbortError'
+    ? 'Не удалось дождаться ответа сервиса. Проверьте интернет-соединение и попробуйте ещё раз. Если письмо уже отправилось, возможен повтор заявки.'
+    : 'Не удалось отправить заявку. Проверьте соединение и попробуйте ещё раз. При необходимости свяжитесь с нами через Telegram.';
+  }finally{
+   clearTimeout(deadline);
+   submitButton.disabled=false;
+   submitButton.innerHTML=originalButtonContent;
+   form.removeAttribute('aria-busy');
+  }
  });
 }
 
